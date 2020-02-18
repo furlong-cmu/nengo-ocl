@@ -4,7 +4,9 @@ Numpy implementation of RaggedArray data structure.
 """
 from __future__ import print_function
 
-from nengo.utils.compat import is_iterable, StringIO
+# from nengo.utils.compat import is_iterable, StringIO
+from io import StringIO
+from collections.abc import Iterable
 import numpy as np
 
 from nengo_ocl.utils import round_up
@@ -170,7 +172,7 @@ class RaggedArray(object):
         self._buf = buf
 
     def __str__(self):
-        sio = StringIO()
+        sio = StringIO.StringIO()
         namelen = max(len(n) for n in self.names)
         fmt = '%%%is' % namelen
         for ii, nn in enumerate(self.names):
@@ -184,7 +186,8 @@ class RaggedArray(object):
         if isinstance(item, slice):
             item = np.arange(len(self))[item]
 
-        if is_iterable(item):
+#         if is_iterable(item):
+        if isinstance(item, Iterable):
             rval = self.__class__.__new__(self.__class__)
             rval.starts = [self.starts[i] for i in item]
             rval.shape0s = [self.shape0s[i] for i in item]

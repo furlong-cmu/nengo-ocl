@@ -6,7 +6,9 @@ from __future__ import print_function
 
 import numpy as np
 import pyopencl as cl
-from nengo.utils.compat import is_iterable, StringIO
+# from nengo.utils.compat import is_iterable, StringIO
+from io import StringIO
+from collections.abc import Iterable
 from pyopencl.array import Array, to_device
 
 from nengo_ocl.raggedarray import RaggedArray
@@ -193,7 +195,7 @@ class CLRaggedArray(object):
         self.queue.finish()
 
     def __str__(self):
-        sio = StringIO()
+        sio = StringIO.StringIO()
         namelen = max([0] + [len(n) for n in self.names])
         fmt = '%%%is' % namelen
         for ii, nn in enumerate(self.names):
@@ -209,7 +211,8 @@ class CLRaggedArray(object):
         Getting one item returns a numpy array (on the host).
         Getting multiple items returns a view into the device.
         """
-        if is_iterable(item):
+#         if is_iterable(item):
+        if isinstance(item, Iterable):
             return self.getitem_device(item)
         else:
             buf = to_host(
@@ -224,7 +227,8 @@ class CLRaggedArray(object):
         if isinstance(item, slice):
             item = np.arange(len(self))[item]
 
-        if is_iterable(item):
+#         if is_iterable(item):
+        if isinstance(item, Iterable):
             return CLRaggedArray.from_buffer(
                 self.queue, self.cl_buf, self.starts[item],
                 self.shape0s[item], self.shape1s[item],
@@ -239,7 +243,8 @@ class CLRaggedArray(object):
                 data=self.cl_buf.data, offset=self.starts[item] * s)
 
     def __setitem__(self, item, new_value):
-        if isinstance(item, slice) or is_iterable(item):
+#         if isinstance(item, slice) or is_iterable(item):
+        if isinstance(item, slice) or isinstance(item, Iterable):
             raise NotImplementedError('TODO')
         else:
             m, n = self.shape0s[item], self.shape1s[item]

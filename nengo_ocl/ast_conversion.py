@@ -27,12 +27,16 @@ from collections import OrderedDict
 
 import numpy as np
 
-from nengo.utils.compat import is_iterable, is_number, range
+# from nengo.utils.compat import is_iterable, is_number, range
+from collections.abc import Iterable
 
+def is_number(x):
+    types = (int, float, complex, np.floating)
+    return isinstance(x, types)
 
 def is_symbolic(x):
     return isinstance(x, Expression) or (
-        is_iterable(x) and all(isinstance(xx, Expression) for xx in x))
+        isinstance(x, Iterable) and all(isinstance(xx, Expression) for xx in x))
 
 
 infix_binary_ops = {
@@ -395,11 +399,11 @@ class FuncExp(Expression):
         elif all(map(is_num, self.args)):
             # simplify scalar function
             return NumExp(self.fn(*[a.value for a in self.args]))
-        elif all(is_num(a) or is_iterable(a) and all(map(is_num, a))
+        elif all(is_num(a) or isinstance(a, Iterable) and all(map(is_num, a))
                  for a in self.args):
             # simplify vector function
             return NumExp(self.fn(
-                [[aa.value for aa in a] if is_iterable(a) else a.value
+                [[aa.value for aa in a] if isinstance(a, Iterable) else a.value
                  for a in self.args]))
         else:
             return self  # cannot simplify
@@ -604,7 +608,7 @@ class OCL_Translator(ast.NodeVisitor):
 
     def _broadcast_args(self, func, args):
         """Apply 'func' element-wise to lists of args"""
-        as_list = lambda x: list(x) if is_iterable(x) else [x]
+        as_list = lambda x: list(x) if isinstance(x, Iterable) else [x]
         args = list(map(as_list, args))
         arg_lens = list(map(len, args))
         max_len = max(arg_lens)
@@ -758,7 +762,7 @@ class OCL_Translator(ast.NodeVisitor):
 
     def visit_Return(self, expr):
         value = self.visit(expr.value)
-        if is_iterable(value):
+        if isinstance(value, Iterable):
             self._check_vector_length(len(value))
             if not all(isinstance(v, Expression) for v in value):
                 raise ValueError(
@@ -815,7 +819,7 @@ def strip_leading_whitespace(source):
 class OCL_Function(object):
 
     def __init__(self, fn, in_dims=None, out_dim=None):
-        if in_dims is not None and not is_iterable(in_dims):
+        if in_dims is not None and not isinstance(in_dims, Iterable):
             in_dims = [in_dims]
 
         self.fn = fn
